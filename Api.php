@@ -10,6 +10,7 @@ class Api
         $this->api_endpoit = 'https://api.telegram.org/bot' . $this->token . '/';
     }
 
+    // Simulating 403 of nginx for fun
     public function forbidden()
     {
         header('HTTP/1.0 403 Forbidden');
