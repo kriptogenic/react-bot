@@ -5,22 +5,57 @@ class Api
 {
     private string $api_endpoit;
 
-    public function __construct(private string $token)
+    public function __construct(private ?string $token = null)
     {
         $this->api_endpoit = 'https://api.telegram.org/bot' . $this->token . '/';
     }
 
-    public function getUpdate()
+    public function forbidden()
+    {
+        header('HTTP/1.0 403 Forbidden');
+        echo <<<'TAG'
+<html>
+<head><title>403 Forbidden</title></head>
+<body>
+<center><h1>403 Forbidden</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+<!-- a padding to disable MSIE and Chrome friendly error page -->
+TAG;
+        die();
+    }
+
+    /**
+     * @return stdClass
+     * @throws JsonException
+     */
+    public function getUpdate() :stdClass
     {
         return json_decode(file_get_contents('php://input'), flags: JSON_THROW_ON_ERROR);
     }
 
-    private function request(string $method, array $params = null) :stdClass
+    private function apiCall(string $method, array $params = []) :?stdClass
+    {
+        if (isset($this->token)) {
+            return $this->httpApiCall($method, $params);
+        }
+
+        $this->responseApiCall($method, $params);
+        return null;
+    }
+
+    private function httpApiCall(string $method, array $params = []) :stdClass
     {
         $ch = curl_init($this->api_endpoit . $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-        if (isset($params)) {
+        if (!empty($params)) {
             $params = $this->clearNullValues($params);
             curl_setopt_array($ch,[
                 CURLOPT_POST => true,
@@ -28,18 +63,35 @@ class Api
             ]);
         }
 
-        $response = json_decode(curl_exec($ch), flags: JSON_THROW_ON_ERROR);
+        $response = curl_exec($ch);
+
+        if ($response === false) {
+            throw new Exception(curl_error($ch));
+        }
+
+        $json_response = json_decode($response, flags: JSON_THROW_ON_ERROR);
         curl_close ($ch);
 
-        if ($response->ok === false) {
+        if ($json_response->ok === false) {
             throw new Exception('API Error:' . json_encode([
                     'response' =>$response,
                     'method' => $method,
                     'params' => $params
-            ]));
+                ]));
         }
 
-        return $response;
+        return $json_response;
+    }
+
+    private function responseApiCall(string $method, array $params = [])
+    {
+        $params['method'] = $method;
+
+        $payload = json_encode($params);
+        header('Content-Type: application/json');
+        header('Content-Length: ' . mb_strlen($payload));
+
+        echo $payload;
     }
 
     private function clearNullValues(array $values) :array
@@ -47,17 +99,51 @@ class Api
         return array_filter($values, fn($value) => !is_null($value));
     }
 
+    public function callbackKeyboard( array ...$button_lines) :string
+    {
+        $keyboard = [];
+
+        $i = 0;
+        foreach ($button_lines as $button_line) {
+            foreach ($button_line as $callback_data => $text) {
+                $keyboard[$i][] = [
+                    'callback_data' => $callback_data,
+                    'text' => $text,
+                ];
+            }
+            $i++;
+        }
+
+        return json_encode(['inline_keyboard' => $keyboard]);
+    }
+
     public function sendMessage(
-        int|string $chat_id, string $text, string $parse_mode = null, array $entities = null,
+        int|string $chat_id, string $text, string $parse_mode = null, string $entities = null,
         bool $disable_web_page_preview = null, bool $disable_notification = null,
         int $reply_to_message_id = null, bool $allow_sending_without_reply = null,
-        array $reply_markup = null
-    ) :stdClass
-    {
-        return $this->request('sendMessage', compact(
+        string $reply_markup = null
+    ) {
+        return $this->apiCall('sendMessage', compact(
         'chat_id', 'text', 'parse_mode',
                 'entities', 'disable_web_page_preview', 'disable_notification', 'reply_to_message_id',
                 'allow_sending_without_reply', 'reply_markup'
         ));
+    }
+
+    public function editMessageReplyMarkup(
+        int|string $chat_id = null, int $message_id = null,
+        string $inline_message_id = null, string $reply_markup = null)
+    {
+        return $this->apiCall('editMessageReplyMarkup', [
+            'chat_id' => $chat_id,
+            'message_id' => $message_id,
+            'inline_message_id' => $inline_message_id,
+            'reply_markup' => $reply_markup
+        ]);
+    }
+
+    public function leaveChat(int|string $chat_id)
+    {
+        return $this->apiCall('leaveChat', ['chat_id' => $chat_id]);
     }
 }

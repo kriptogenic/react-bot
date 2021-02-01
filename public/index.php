@@ -1,8 +1,34 @@
 <?php
+
 require __DIR__ . '/../Api.php';
 require __DIR__ . '/../NewChannelPostHandler.php';
+require __DIR__ . '/../InlineButtonHandler.php';
 
-$token = getenv('BOT_TOKEN');
-$api = new Api($token);
+$channel = getenv('CHANNEL_ID');
+$api = new Api();
 
-$api->sendMessage(47543915, 'test');
+// Fetching update
+try {
+    $update = $api->getUpdate();
+} catch (JsonException){
+    $api->forbidden();
+}
+
+// Routing
+if (isset($update->channel_post)) {
+    if ($update->channel_post->chat->id == $channel) {
+        (new NewChannelPostHandler($api))
+            ->handle($update->channel_post);
+    } else {
+        // Leaving from other channels
+        $api->leaveChat($update->channel_post->chat->id);
+    }
+} elseif (isset($update->callback_query)) {
+    if (isset($update->callback_query->message) && $update->callback_query->message->chat->id == $channel) {
+        (new InlineButtonHandler($api))
+            ->handle($update->callback_query);
+    }
+} elseif (isset($update->message) && in_array($update->message->chat->type, ['group', 'supergroup'])) {
+    // Leaving from groups
+    $api->leaveChat($update->message->chat->id);
+}
