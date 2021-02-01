@@ -1,0 +1,12 @@
+{
+    "name": "kriptonuz/react-bot",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kriptonuz",
+            "email": "kripton253@gmail.com"
+        }
+    ],
+    "require": {}
+}
