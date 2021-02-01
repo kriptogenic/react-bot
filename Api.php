@@ -16,6 +16,7 @@ class Api
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         if (isset($params)) {
+            $params = $this->clearNullValues($params);
             curl_setopt_array($ch,[
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $params
@@ -30,10 +31,15 @@ class Api
                     'response' =>$response,
                     'method' => $method,
                     'params' => $params
-                ]));
+            ]));
         }
 
         return $response;
+    }
+
+    private function clearNullValues(array $values) :array
+    {
+        return array_filter($values, fn($value) => !is_null($value));
     }
 
     public function sendMessage(
@@ -43,12 +49,10 @@ class Api
         array $reply_markup = null
     ) :stdClass
     {
-        return $this->request('sendMessage', array_filter(
-                compact('chat_id', 'text', 'parse_mode',
-                    'entities', 'disable_web_page_preview', 'disable_notification', 'reply_to_message_id',
-                    'allow_sending_without_reply', 'reply_markup'),
-                fn($value) => !is_null($value)
-            )
-        );
+        return $this->request('sendMessage', compact(
+        'chat_id', 'text', 'parse_mode',
+                'entities', 'disable_web_page_preview', 'disable_notification', 'reply_to_message_id',
+                'allow_sending_without_reply', 'reply_markup'
+        ));
     }
 }
