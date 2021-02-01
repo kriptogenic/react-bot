@@ -3,11 +3,12 @@
 
 class Api
 {
-    private string $api_endpoit;
+    private string $apiEndpoit;
+    private array $cacheApiCall;
 
     public function __construct(private ?string $token = null)
     {
-        $this->api_endpoit = 'https://api.telegram.org/bot' . $this->token . '/';
+        $this->apiEndpoit = 'https://api.telegram.org/bot' . $this->token . '/';
     }
 
     // Simulating 403 of nginx for fun
@@ -53,7 +54,7 @@ TAG;
 
     private function httpApiCall(string $method, array $params = []) :stdClass
     {
-        $ch = curl_init($this->api_endpoit . $method);
+        $ch = curl_init($this->apiEndpoit . $method);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         if (!empty($params)) {
@@ -86,9 +87,17 @@ TAG;
 
     private function responseApiCall(string $method, array $params = [])
     {
-        $params['method'] = $method;
+        if (isset($this->cacheApiCall)) {
+            throw new Exception('In tokenless mode 2 or more api call can not be executed!');
+        }
 
-        $payload = json_encode($params);
+        $params['method'] = $method;
+        $this->cacheApiCall = $params;
+    }
+
+    public function executeResponseApiCall()
+    {
+        $payload = json_encode($this->cacheApiCall);
         header('Content-Type: application/json');
         header('Content-Length: ' . mb_strlen($payload));
 

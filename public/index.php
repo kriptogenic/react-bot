@@ -39,3 +39,6 @@ if (isset($update->channel_post)) {
     // Leaving from groups
     $api->leaveChat($update->message->chat->id);
 }
+
+
+$api->executeResponseApiCall();
