@@ -5,7 +5,14 @@ require __DIR__ . '/../NewChannelPostHandler.php';
 require __DIR__ . '/../InlineButtonHandler.php';
 
 $channel = getenv('CHANNEL_ID');
+$webhook_secret = getenv('WEBHOOK_SECRET');
 $api = new Api();
+
+if (empty($_GET['ws']) || $_GET['ws'] !== $webhook_secret) {
+    $api->forbidden();
+}
+
+
 
 // Fetching update
 try {
