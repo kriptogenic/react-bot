@@ -10,6 +10,11 @@ class Api
         $this->api_endpoit = 'https://api.telegram.org/bot' . $this->token . '/';
     }
 
+    public function getUpdate()
+    {
+        return json_decode(file_get_contents('php://input'), flags: JSON_THROW_ON_ERROR);
+    }
+
     private function request(string $method, array $params = null) :stdClass
     {
         $ch = curl_init($this->api_endpoit . $method);

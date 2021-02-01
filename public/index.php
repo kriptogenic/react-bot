@@ -1,6 +1,7 @@
 <?php
 
-
 $token = getenv('BOT_TOKEN');
 
-echo $token;
+$api = new Api($token);
+
+$api->sendMessage(47543915, 'test');
