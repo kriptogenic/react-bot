@@ -8,5 +8,7 @@
             "email": "kripton253@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "php": "~8.0"
+    }
 }
