@@ -97,6 +97,10 @@ TAG;
 
     public function executeResponseApiCall()
     {
+        if (is_null($this->cacheApiCall)) {
+            return;
+        }
+
         $payload = json_encode($this->cacheApiCall);
         header('Content-Type: application/json');
         header('Content-Length: ' . mb_strlen($payload));
