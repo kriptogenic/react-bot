@@ -97,7 +97,7 @@ TAG;
 
     public function executeResponseApiCall()
     {
-        if (is_null($this->cacheApiCall)) {
+        if (!isset($this->cacheApiCall)) {
             return;
         }
 
