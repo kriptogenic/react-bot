@@ -160,4 +160,12 @@ TAG;
     {
         return $this->apiCall('leaveChat', ['chat_id' => $chat_id]);
     }
+
+    public function setWebhook(string $url, CURLFile $certificate = null, string $ip_adress = null,
+                               int $max_connections = null, string $allowed_updates = null,
+                               bool $drop_pending_updates = null)
+    {
+        return $this->apiCall('setWebhook', compact('url', 'certificate',
+            'ip_adress', 'max_connections', 'allowed_updates', 'drop_pending_updates'));
+    }
 }
